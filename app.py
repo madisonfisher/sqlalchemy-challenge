@@ -116,6 +116,32 @@ def tobs():
 
     return jsonify(measurement_data_tobs_list)
 
+@app.route("/api/v1.0/<start>")
+def start(start):
+    #start session
+    session = Session(engine)
+
+    #finding latest date
+    latest_date = session.query(Measurement.date).order_by(Measurement.date.desc()).first().date
+
+    #date and latest years tobs data
+    TMIN_start = session.query(Measurement.date, func.min(Measurement.tobs)).\
+        filter(func.strftime("%Y-%m-%d", Measurement.date) >= start).all()
+    
+    #close session
+    session.close()
+
+    #convert data into variables for returning
+    for date, tobs in TMIN_start:
+        TMIN_start_date = date
+        TMIN_start_tobs = tobs
+       
+
+    return (
+        f'The TMIN for {start} to {latest_date} is:</br>'
+        f'{TMIN_start_tobs} on {TMIN_start_date}'
+    )
+     
 
 #end
 if __name__ == "__main__":
