@@ -1,6 +1,24 @@
+#dependencies
+import numpy as np
+
+import sqlalchemy
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, func
+
+#flask import
 from flask import Flask, jsonify
 
-#set up
+#create engine to hawaii.sqlite
+engine = create_engine("sqlite:///Resources/hawaii.sqlite")
+#reflect database 
+Base = automap_base()
+Base.prepare(engine, reflect=True)
+#save references to each table
+Measurement = Base.classes.measurement
+Station = Base.classes.station
+
+#set up flask
 app = Flask(__name__)
 
 #routes
@@ -17,6 +35,28 @@ def home():
         f'*Supply date as %Y-%m-%d</br>'
     )
 
+@app.route("/api/v1.0/precipitation")
+def prep():
+    #start session
+    session = Session(engine)
+
+    #date and prep data
+    measurement_data = session.query(Measurement.date, Measurement.prcp).\
+        order_by(Measurement.date).all()
+    
+    #close session
+    session.close()
+
+    #convert list of tuples into normal list
+    measurement_data_list = []
+    for date, prcp in measurement_data:
+        measurement_data_dict = {}
+        measurement_data_dict["date"] = date
+        measurement_data_dict["precipitation"] = prcp
+        measurement_data_list.append(measurement_data_dict)
+
+
+    return jsonify(measurement_data_list)
 
 
 
