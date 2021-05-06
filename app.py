@@ -85,6 +85,8 @@ def stations():
 
 @app.route("/api/v1.0/tobs")
 def tobs():
+    #top station found from analysis
+    station = "USC00519281"
     #start session
     session = Session(engine)
 
@@ -101,6 +103,7 @@ def tobs():
     #date and latest years tobs data
     measurement_data_tobs = session.query(Measurement.date, Measurement.tobs).\
         filter(func.strftime("%Y-%m-%d", Measurement.date) >= start_date).\
+        filter(Measurement.station == station).\
         order_by(Measurement.date).all()
     
     #close session
@@ -124,24 +127,96 @@ def start(start):
     #finding latest date
     latest_date = session.query(Measurement.date).order_by(Measurement.date.desc()).first().date
 
-    #date and latest years tobs data
+    #date and tobs data 
+    #TMIN
     TMIN_start = session.query(Measurement.date, func.min(Measurement.tobs)).\
         filter(func.strftime("%Y-%m-%d", Measurement.date) >= start).all()
-    
+    #TMAX
+    TMAX_start = session.query(Measurement.date, func.max(Measurement.tobs)).\
+        filter(func.strftime("%Y-%m-%d", Measurement.date) >= start).all()
+
+    #TAVG
+    TAVG_start = session.query(Measurement.date, func.avg(Measurement.tobs)).\
+        filter(func.strftime("%Y-%m-%d", Measurement.date) >= start).all()
+
     #close session
     session.close()
 
     #convert data into variables for returning
+    #TMIN
     for date, tobs in TMIN_start:
         TMIN_start_date = date
         TMIN_start_tobs = tobs
-       
+    
+    #TMAX
+    for date, tobs in TMAX_start:
+        TMAX_start_date = date
+        TMAX_start_tobs = tobs
+    
+    #TAVG
+    for date, tobs in TAVG_start:
+        TAVG_start_tobs = round(tobs,1)
 
     return (
         f'The TMIN for {start} to {latest_date} is:</br>'
-        f'{TMIN_start_tobs} on {TMIN_start_date}'
+        f'{TMIN_start_tobs} on {TMIN_start_date}</br>'
+        f'-----------------------------------------------------</br>'
+        f'The TMAX for {start} to {latest_date} is:</br>'
+        f'{TMAX_start_tobs} on {TMAX_start_date}</br>'
+        f'-----------------------------------------------------</br>'
+        f'The TAVG for {start} to {latest_date} is:</br>'
+        f'{TAVG_start_tobs}</br>'
     )
-     
+
+@app.route("/api/v1.0/<start>/<end>")
+def both(start,end):
+    #start session
+    session = Session(engine)
+
+    #date and tobs data 
+    #TMIN
+    TMIN_both = session.query(Measurement.date, func.min(Measurement.tobs)).\
+        filter(func.strftime("%Y-%m-%d", Measurement.date) >= start).\
+        filter(func.strftime("%Y-%m-%d", Measurement.date) <= end).all()
+    
+    #TMAX
+    TMAX_both = session.query(Measurement.date, func.max(Measurement.tobs)).\
+        filter(func.strftime("%Y-%m-%d", Measurement.date) >= start).\
+        filter(func.strftime("%Y-%m-%d", Measurement.date) <= end).all()
+
+    #TAVG
+    TAVG_both = session.query(Measurement.date, func.avg(Measurement.tobs)).\
+        filter(func.strftime("%Y-%m-%d", Measurement.date) >= start).\
+        filter(func.strftime("%Y-%m-%d", Measurement.date) <= end).all()
+
+    #close session
+    session.close()
+
+    #convert data into variables for returning
+    #TMIN
+    for date, tobs in TMIN_both:
+        TMIN_both_date = date
+        TMIN_both_tobs = tobs
+    
+    #TMAX
+    for date, tobs in TMAX_both:
+        TMAX_both_date = date
+        TMAX_both_tobs = tobs
+    
+    #TAVG
+    for date, tobs in TAVG_both:
+        TAVG_both_tobs = round(tobs,1)
+
+    return (
+        f'The TMIN for {start} to {end} is:</br>'
+        f'{TMIN_both_tobs} on {TMIN_both_date}</br>'
+        f'-----------------------------------------------------</br>'
+        f'The TMAX for {start} to {end} is:</br>'
+        f'{TMAX_both_tobs} on {TMAX_both_date}</br>'
+        f'-----------------------------------------------------</br>'
+        f'The TAVG for {start} to {end} is:</br>'
+        f'{TAVG_both_tobs}</br>'
+    )
 
 #end
 if __name__ == "__main__":
