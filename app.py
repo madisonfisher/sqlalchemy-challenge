@@ -83,6 +83,40 @@ def stations():
 
     return jsonify(station_data_list)
 
+@app.route("/api/v1.0/tobs")
+def tobs():
+    #start session
+    session = Session(engine)
+
+    #finding latest date
+    latest_date = session.query(Measurement.date).order_by(Measurement.date.desc()).first().date
+    #pulling date data 
+    latest_date_2 = dt.datetime.strptime(latest_date, '%Y-%m-%d')
+    latest_year = int(latest_date_2.strftime("%Y"))
+    latest_month = int(latest_date_2.strftime("%m"))
+    latest_day = int(latest_date_2.strftime("%d"))
+    #finding 1 year before latest date
+    start_date = dt.date(latest_year, latest_month, latest_day) - dt.timedelta(days=365)
+
+    #date and latest years tobs data
+    measurement_data_tobs = session.query(Measurement.date, Measurement.tobs).\
+        filter(func.strftime("%Y-%m-%d", Measurement.date) >= start_date).\
+        order_by(Measurement.date).all()
+    
+    #close session
+    session.close()
+
+    #convert list of tuples into normal list
+    measurement_data_tobs_list = []
+    for date, tobs in measurement_data_tobs:
+        measurement_data_tobs_dict = {}
+        measurement_data_tobs_dict["date"] = date
+        measurement_data_tobs_dict["tobs"] = tobs
+        measurement_data_tobs_list.append(measurement_data_tobs_dict)
+
+    return jsonify(measurement_data_tobs_list)
+
+
 #end
 if __name__ == "__main__":
     app.run(debug=True)
