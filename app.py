@@ -1,5 +1,6 @@
 #dependencies
 import numpy as np
+import datetime as dt
 
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
@@ -55,10 +56,32 @@ def prep():
         measurement_data_dict["precipitation"] = prcp
         measurement_data_list.append(measurement_data_dict)
 
-
     return jsonify(measurement_data_list)
 
+@app.route("/api/v1.0/stations")
+def stations():
+    #start session
+    session = Session(engine)
 
+    #date and prep data
+    station_data = session.query(Station.id, Station.station, Station.name, Station.latitude, Station.longitude, Station.elevation).all()
+    
+    #close session
+    session.close()
+
+    #convert list of tuples into normal list
+    station_data_list = []
+    for id, station, name, latitude, longitude, elevation in station_data:
+        station_data_dict = {}
+        station_data_dict["id"] = id
+        station_data_dict["station"] = station
+        station_data_dict["name"] = name
+        station_data_dict["latitude"] = latitude
+        station_data_dict["longitude"] = longitude
+        station_data_dict["elevation"] = elevation
+        station_data_list.append(station_data_dict)
+
+    return jsonify(station_data_list)
 
 #end
 if __name__ == "__main__":
